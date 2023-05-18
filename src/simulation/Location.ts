@@ -25,23 +25,28 @@ class Location {
     return this;
   }
 
-  moveForward(distance: number = 1, width: number, height: number) {
-    const x = this.x + this.cos * distance;
-    const y = this.y + this.sin * distance;
+  moveForward(distance: number, radius: number, width: number, height: number) {
+    const x_real = this.x + this.cos * distance;
+    const y_real = this.y + this.sin * distance;
+    const x = x_real - radius;
+    const y = y_real - radius;
+    const f_width = width - 2 * radius;
+    const f_height = height - 2 * radius;
 
-    const xDegrees = x < 0 || x > width ? Math.PI - this.radians : this.radians;
-    const yDegrees = y < 0 || y > height ? 2 * Math.PI - xDegrees : xDegrees;
+    const xDegrees = x < 0 || x > f_width ? Math.PI - this.radians : this.radians;
+    const yDegrees = y < 0 || y > f_height ? 2 * Math.PI - xDegrees : xDegrees;
     this.radians = yDegrees;
 
-    this.x = x < 0 ? -x : x > width ? width - (x - width) : x;
-    this.y = y < 0 ? -y : y > height ? height - (y - height) : y;
+    this.x = (x < 0 ? -x : x > f_width ? f_width - (x - f_width) : x) + radius;
+    this.y = (y < 0 ? -y : y > f_height ? f_height - (y - f_height) : y) + radius;
+    this.rotate(Math.random() * 0.1 - 0.05);
     return this;
   }
 
-  static randomInRectangle(width: number, height: number) {
+  static randomInRectangle(width: number, height: number, radius: number) {
     return new Location(
-      Math.random() * width,
-      Math.random() * height,
+      Math.random() * (width - 2 * radius) + radius,
+      Math.random() * (height - 2 * radius) + radius,
       Math.random() * 2 * Math.PI
     );
   }
@@ -51,19 +56,6 @@ class Location {
     const difference = angle - this.radians;
     this.rotate(difference);
     return this;
-  }
-
-  stayInBounds(width: number, height: number) {
-    if (this.x < 0) {
-      this.x = 0;
-    } else if (this.x > width) {
-      this.x = width;
-    }
-    if (this.y < 0) {
-      this.y = 0;
-    } else if (this.y > height) {
-      this.y = height;
-    }
   }
 }
 

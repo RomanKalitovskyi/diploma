@@ -1,74 +1,101 @@
-import Field from "./Field";
-import { ROBOT_SIZE } from "./Config";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import Menu from "../components/Menu";
+import Group from "./Group";
 
 class Canvas {
-  canvas: HTMLCanvasElement;
+  canvasElement: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  field: Field;
+  groups: Group[];
+  menuRoot;
 
-  constructor() {
-    this.canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
+  constructor(canvasElement: HTMLCanvasElement, menuElement: HTMLDivElement) {
+    this.canvasElement = canvasElement;
+    this.ctx = this.canvasElement.getContext("2d") as CanvasRenderingContext2D;
+
     this.resizeCanvas();
-    this.field = new Field(this.fieldWidth, this.fieldHeight);
-
     window.addEventListener("resize", () => {
-      this.handleResize();
+      this.resizeCanvas();
     });
+
+    this.groups = this.loadGroups();
+
+    this.menuRoot = createRoot(menuElement);
+    this.renderMenu();
   }
 
-  get width() {
-    return this.canvas.width;
-  }
-
-  get fieldWidth() {
-    return this.width - ROBOT_SIZE;
-  }
-
-  get height() {
-    return this.canvas.height;
-  }
-
-  get fieldHeight() {
-    return this.height - ROBOT_SIZE;
-  }
-
-  handleResize() {
-    this.resizeCanvas();
-    this.field.robots.forEach((robot) =>
-      robot.location.stayInBounds(this.fieldWidth, this.fieldHeight)
+  renderMenu() {
+    this.menuRoot.render(
+      React.createElement(Menu, {
+        canvas: this,
+      })
     );
-    this.field.targets.forEach((target) =>
-      target.location.stayInBounds(this.fieldWidth, this.fieldHeight)
-    );
+  }
+
+  loadGroups() {
+    const groupsLength = localStorage.length;
+    return Array(groupsLength)
+      .fill(null)
+      .map((_, i) => {
+        const groupName = localStorage.key(i) as string;
+        return new Group(groupName, this.width, this.height);
+      });
   }
 
   resizeCanvas() {
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+    const { innerWidth, innerHeight } = window;
+    this.canvasElement.width = innerWidth;
+    this.canvasElement.height = innerHeight;
+  }
+
+  addGroup(name: string) {
+    this.groups.push(new Group(name, this.width, this.height));
+    this.renderMenu();
+  }
+
+  deleteGroup(name: string) {
+    this.groups = this.groups.filter((group) => group.name !== name);
+    localStorage.removeItem(name);
+    this.renderMenu();
+  }
+
+  get width() {
+    return this.canvasElement.width;
+  }
+
+  get height() {
+    return this.canvasElement.height;
   }
 
   clearCanvas() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.clearRect(0, 0, this.width, this.height);
   }
 
   step() {
     this.clearCanvas();
-    this.drawField();
-    this.stepField();
+    this.drawGroup();
+    this.stepGroup();
 
     requestAnimationFrame(() => this.step());
   }
 
-  stepField() {
-    this.field.robots.forEach((robot) =>
-      robot.step(this.fieldWidth, this.fieldHeight)
-    );
+  stepGroup() {
+    this.groups.forEach((group) => group.step(this.width, this.height));
   }
 
-  drawField() {
-    this.field.robots.forEach((robot) => robot.draw(this.ctx));
-    this.field.targets.forEach((target) => target.draw(this.ctx));
+  drawGroup() {
+    this.groups.forEach((group) => group.draw(this.ctx));
+    this.groups.forEach((group, i) => {
+      this.ctx.font = "24px Arial";
+      this.ctx.fillStyle = "black";
+      const text = `${group.name}: ${group.numberOfFilledStorages}/${group.numberOfEmptiedSources}`;
+
+      this.ctx.fillText(
+        text,
+        this.width - this.ctx.measureText(text).width - 20,
+        50 * i + 40
+      );
+    });
   }
 }
 

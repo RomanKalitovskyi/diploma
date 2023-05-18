@@ -1,4 +1,7 @@
 import Canvas from "./simulation/Canvas";
-const canvas = new Canvas();
 
-canvas.step();
+const canvasElement = document.getElementById("canvas") as HTMLCanvasElement;
+const menuElement = document.getElementById("menu") as HTMLDivElement;
+
+const canvasObj = new Canvas(canvasElement, menuElement);
+canvasObj.step();
