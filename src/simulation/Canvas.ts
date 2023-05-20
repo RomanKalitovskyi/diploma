@@ -51,7 +51,9 @@ class Canvas {
   }
 
   addGroup(name: string) {
-    this.groups.push(new Group(name, this.width, this.height));
+    const group = new Group(name, this.width, this.height);
+    this.groups.push(group);
+    localStorage.setItem(name, JSON.stringify(group.config));
     this.renderMenu();
   }
 
@@ -98,7 +100,8 @@ class Canvas {
         200 * i + 40
       );
       const numberOfGatheredResources = (
-        group.numberOfGatheredResources / timestamp * 1000
+        (group.numberOfGatheredResources / timestamp) *
+        1000
       ).toFixed(2);
 
       this.ctx.fillText(
