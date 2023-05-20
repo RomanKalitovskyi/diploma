@@ -1,7 +1,7 @@
 import Location from "./Location";
 
 class Storage {
-  private amount = 0;
+  public amount = 0;
   constructor(public location: Location, private maxCapacity: number) {}
 
   isFull() {

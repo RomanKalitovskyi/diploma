@@ -10,20 +10,23 @@ const DEFAULT_CONFIG = {
   ROBOT_RADIUS: 5,
   ROBOT_SPEED: 1,
 
-  STORAGE_RADIUS: 10,
+  STORAGE_RADIUS: 20,
   STORAGE_SPEED: 0,
   STORAGE_AMOUNT: 100,
 
-  SOURCE_RADIUS: 10,
+  SOURCE_RADIUS: 20,
   SOURCE_SPEED: 0,
   SOURCE_AMOUNT: 100,
 
-  RECEIVER_RADIUS: 30,
+  RECEIVER_RADIUS: 0,
   SELF_CONFIDENT_FACTOR: 1.25,
 
-  NUMBER_OF_ROBOTS: 100,
+  NUMBER_OF_ROBOTS: 500,
   NUMBER_OF_SOURCES: 1,
   NUMBER_OF_STORAGES: 1,
+
+  RANDOM_ROTATION_FACTOR: 0.000,
+  RANDOM_SPEED_FACTOR: 0.000,
 };
 
 export type ConfigKey = keyof typeof DEFAULT_CONFIG;
@@ -34,10 +37,14 @@ const outlineWidth = 2;
 class Group {
   public numberOfFilledStorages = 0;
   public numberOfEmptiedSources = 0;
+  public numberOfGatheredResources = 0;
+  private baseNumberOfGatheredResources = 0;
 
   get config() {
     const clientConfig = localStorage.getItem(this.name);
-    return clientConfig ? JSON.parse(clientConfig) as ConfigType : DEFAULT_CONFIG;
+    return clientConfig
+      ? (JSON.parse(clientConfig) as ConfigType)
+      : DEFAULT_CONFIG;
   }
 
   setValue = (key: ConfigKey, value: number | string) => {
@@ -45,7 +52,7 @@ class Group {
       this.name,
       JSON.stringify({ ...this.config, [key]: value })
     );
-  }
+  };
 
   public robots: Robot[] = [];
   public storages: Storage[] = [];
@@ -54,11 +61,7 @@ class Group {
 
   private grid: Robot[][][] = [];
 
-  constructor(
-    public name: string,
-    width: number,
-    height: number
-  ) {
+  constructor(public name: string, width: number, height: number) {
     this.robots = this.createRobots(width, height);
     this.storages = this.createStorages(width, height);
     this.sources = this.createSources(width, height);
@@ -76,7 +79,7 @@ class Group {
             this.receiveMessages.bind(this),
             this.sendMessage.bind(this),
             this.reachedSource.bind(this),
-            this.reachedStorage.bind(this)
+            this.reachedStorage.bind(this),
           )
         );
       });
@@ -89,7 +92,11 @@ class Group {
         return (
           this.storages[index] ??
           new Storage(
-            Location.randomInRectangle(width, height, this.config.STORAGE_RADIUS),
+            Location.randomInRectangle(
+              width,
+              height,
+              this.config.STORAGE_RADIUS
+            ),
             this.config.STORAGE_AMOUNT
           )
         );
@@ -103,7 +110,11 @@ class Group {
         return (
           this.sources[index] ??
           new Source(
-            Location.randomInRectangle(width, height, this.config.SOURCE_RADIUS),
+            Location.randomInRectangle(
+              width,
+              height,
+              this.config.SOURCE_RADIUS
+            ),
             this.config.SOURCE_AMOUNT
           )
         );
@@ -114,8 +125,7 @@ class Group {
     return this.sources.find((source) => {
       return (
         robot.location.distance(source.location) <=
-        this.config.ROBOT_RADIUS +
-          this.config.SOURCE_RADIUS
+        this.config.ROBOT_RADIUS + this.config.SOURCE_RADIUS
       );
     });
   }
@@ -124,8 +134,7 @@ class Group {
     return this.storages.find((storage) => {
       return (
         robot.location.distance(storage.location) <=
-        this.config.ROBOT_RADIUS +
-          this.config.STORAGE_RADIUS
+        this.config.ROBOT_RADIUS + this.config.STORAGE_RADIUS
       );
     });
   }
@@ -172,10 +181,7 @@ class Group {
   }
 
   private receiveMessages(robot: Robot) {
-    return this.getRobotsInRadius(
-      robot,
-      this.config.RECEIVER_RADIUS
-    )
+    return this.getRobotsInRadius(robot, this.config.RECEIVER_RADIUS)
       .filter((otherRobot) => {
         return this.messages.has(otherRobot);
       })
@@ -190,7 +196,12 @@ class Group {
 
   draw(ctx: CanvasRenderingContext2D) {
     this.robots.forEach((robot) =>
-      robot.draw(ctx, this.config.ROBOT_RADIUS, this.config.robotColor, this.config.resourceColor)
+      robot.draw(
+        ctx,
+        this.config.ROBOT_RADIUS,
+        this.config.robotColor,
+        this.config.resourceColor
+      )
     );
     this.storages.forEach((storage) =>
       storage.draw(
@@ -240,20 +251,40 @@ class Group {
         this.config.SELF_CONFIDENT_FACTOR,
         this.config.ROBOT_SPEED,
         this.config.RECEIVER_RADIUS,
-        this.config.ROBOT_RADIUS
+        this.config.ROBOT_RADIUS,
+        this.config.RANDOM_ROTATION_FACTOR,
+        this.config.RANDOM_SPEED_FACTOR
+
       )
     );
     this.robots = this.createRobots(width, height);
 
     this.storages.forEach((storage) =>
-      storage.step(width, height, this.config.STORAGE_SPEED, this.config.STORAGE_RADIUS)
+      storage.step(
+        width,
+        height,
+        this.config.STORAGE_SPEED,
+        this.config.STORAGE_RADIUS
+      )
     );
     this.sources.forEach((source) =>
-      source.step(width, height, this.config.SOURCE_SPEED, this.config.SOURCE_RADIUS)
+      source.step(
+        width,
+        height,
+        this.config.SOURCE_SPEED,
+        this.config.SOURCE_RADIUS
+      )
     );
+
+    this.numberOfGatheredResources =
+      this.baseNumberOfGatheredResources +
+      this.storages.reduce((sum, storage) => {
+        return sum + storage.amount;
+      }, 0);
 
     this.storages = this.storages.map((storage) => {
       if (storage.isFull()) {
+        this.baseNumberOfGatheredResources += storage.amount;
         this.numberOfFilledStorages += 1;
         return new Storage(
           Location.randomInRectangle(width, height, this.config.STORAGE_RADIUS),

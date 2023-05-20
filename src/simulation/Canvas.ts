@@ -2,12 +2,14 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import Menu from "../components/Menu";
 import Group from "./Group";
+import { time } from "console";
 
 class Canvas {
   canvasElement: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   groups: Group[];
   menuRoot;
+  counter = 0;
 
   constructor(canvasElement: HTMLCanvasElement, menuElement: HTMLDivElement) {
     this.canvasElement = canvasElement;
@@ -72,8 +74,9 @@ class Canvas {
   }
 
   step() {
+    this.counter++;
     this.clearCanvas();
-    this.drawGroup();
+    this.drawGroup(this.counter);
     this.stepGroup();
 
     requestAnimationFrame(() => this.step());
@@ -83,17 +86,47 @@ class Canvas {
     this.groups.forEach((group) => group.step(this.width, this.height));
   }
 
-  drawGroup() {
+  drawGroup(timestamp: number) {
     this.groups.forEach((group) => group.draw(this.ctx));
     this.groups.forEach((group, i) => {
       this.ctx.font = "24px Arial";
       this.ctx.fillStyle = "black";
-      const text = `${group.name}: ${group.numberOfFilledStorages}/${group.numberOfEmptiedSources}`;
 
       this.ctx.fillText(
-        text,
-        this.width - this.ctx.measureText(text).width - 20,
-        50 * i + 40
+        group.name,
+        this.width - this.ctx.measureText(group.name).width - 20,
+        200 * i + 40
+      );
+      const numberOfGatheredResources = (
+        group.numberOfGatheredResources / timestamp * 1000
+      ).toFixed(2);
+
+      this.ctx.fillText(
+        numberOfGatheredResources,
+        this.width - this.ctx.measureText(numberOfGatheredResources).width - 20,
+        200 * i + 80
+      );
+
+      const deliveryTime = (
+        timestamp / group.numberOfGatheredResources
+      ).toFixed(2);
+
+      this.ctx.fillText(
+        deliveryTime,
+        this.width - this.ctx.measureText(deliveryTime).width - 20,
+        200 * i + 120
+      );
+
+      const meanLifetime = (
+        timestamp /
+        (group.numberOfEmptiedSources + group.numberOfFilledStorages) /
+        2
+      ).toFixed(2);
+
+      this.ctx.fillText(
+        meanLifetime,
+        this.width - this.ctx.measureText(meanLifetime).width - 20,
+        200 * i + 160
       );
     });
   }

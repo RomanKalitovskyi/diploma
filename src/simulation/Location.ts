@@ -25,7 +25,7 @@ class Location {
     return this;
   }
 
-  moveForward(distance: number, radius: number, width: number, height: number) {
+  moveForward(distance: number, radius: number, width: number, height: number, randomRotationFactor: number = 0) {
     const x_real = this.x + this.cos * distance;
     const y_real = this.y + this.sin * distance;
     const x = x_real - radius;
@@ -39,7 +39,7 @@ class Location {
 
     this.x = (x < 0 ? -x : x > f_width ? f_width - (x - f_width) : x) + radius;
     this.y = (y < 0 ? -y : y > f_height ? f_height - (y - f_height) : y) + radius;
-    this.rotate(Math.random() * 0.1 - 0.05);
+    this.rotate(Math.random() * randomRotationFactor - randomRotationFactor / 2);
     return this;
   }
 

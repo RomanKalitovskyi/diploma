@@ -14,7 +14,7 @@ class Robot {
   private prevTarget: Location | null = null;
   private distanceToSource: number = 10000;
   private distanceToStorage: number = 10000;
-  private speedCoefficient: number = Math.random() * 0.5 + 0.75;
+  private random: number = Math.random();
 
   constructor(
     public location: Location,
@@ -22,7 +22,7 @@ class Robot {
     private receiveMessages: (robot: Robot) => string[],
     private sendMessage: (robot: Robot, message: string) => void,
     private reachedSource: (robot: Robot) => Source | undefined,
-    private reachedStorage: (robot: Robot) => Storage | undefined
+    private reachedStorage: (robot: Robot) => Storage | undefined,
   ) {}
 
   processMessages() {
@@ -53,7 +53,9 @@ class Robot {
     selfConfidenceFactor: number,
     robotSpeed: number,
     receiverDistance: number,
-    robotRadius: number
+    robotRadius: number,
+    randomRotationFactor: number = 0,
+    randomSpeedFactor: number = 0
   ) {
     this.target = null;
     this.emitMessage(receiverDistance);
@@ -141,16 +143,18 @@ class Robot {
         }
       }
     }
+    const speed = robotSpeed - randomSpeedFactor * robotSpeed * this.random;
 
-    this.distanceToSource += robotSpeed;
+    this.distanceToSource += speed;
 
-    this.distanceToStorage += robotSpeed;
+    this.distanceToStorage += speed;
 
     this.location.moveForward(
-      robotSpeed * this.speedCoefficient,
+      speed,
       robotRadius,
       width,
-      height
+      height,
+      randomRotationFactor
     );
   }
 

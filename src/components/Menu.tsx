@@ -177,7 +177,7 @@ function Section({ group, onDelete }: { group: Group; onDelete: () => void }) {
             group={group}
             keyName={"STORAGE_AMOUNT"}
             min={0}
-            max={1000}
+            max={10000}
             step={10}
           />
           <Range
@@ -205,7 +205,7 @@ function Section({ group, onDelete }: { group: Group; onDelete: () => void }) {
             group={group}
             keyName={"SOURCE_AMOUNT"}
             min={0}
-            max={1000}
+            max={10000}
             step={10}
           />
           <Range
@@ -217,18 +217,33 @@ function Section({ group, onDelete }: { group: Group; onDelete: () => void }) {
           />
           <Range
             group={group}
-            keyName={"SELF_CONFIDENT_FACTOR"}
-            min={0}
-            max={5}
-            step={0.1}
-          />
-          <Range
-            group={group}
             keyName={"RECEIVER_RADIUS"}
-            min={1}
+            min={0}
             max={100}
             step={1}
           />
+          <Range
+            group={group}
+            keyName={"SELF_CONFIDENT_FACTOR"}
+            min={1}
+            max={5}
+            step={0.01}
+          />
+          <Range
+            group={group}
+            keyName={"RANDOM_ROTATION_FACTOR"}
+            min={0}
+            max={1}
+            step={0.01}
+          />
+          <Range
+            group={group}
+            keyName={"RANDOM_SPEED_FACTOR"}
+            min={0}
+            max={1}
+            step={0.01}
+          />
+
           <button onClick={onDelete}>Delete</button>
         </>
       )}
